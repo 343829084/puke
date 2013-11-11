@@ -449,3 +449,4 @@ class TJSONProtocolFactory:
 
   def getProtocol(self, trans):
     return TJSONProtocol(trans)
+
