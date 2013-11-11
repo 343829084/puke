@@ -67,7 +67,7 @@ def real_session_offline(session_id, online_time):
 
 #聊天接口
 #这个修饰器的意思是注册process_chat函数接收cmd=1的消息
-@reg(msg_def.client_cmd_e.CHAT_REQ, msg_def.chat_msg_req_t)
+@reg(msg_def.client_cmd_e.CHAT_REQ, msg_def.chat_req_t)
 def process_chat(player, msg):
     print('process_chat~~~~', msg)
    

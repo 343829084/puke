@@ -8,6 +8,7 @@ import time
 import thrift.Thrift as Thrift
 import thrift.protocol.TBinaryProtocol as TBinaryProtocol
 import thrift.protocol.TCompactProtocol as TCompactProtocol
+import thrift.protocol.TJSONProtocol as TJSONProtocol
 import thrift.transport.TTransport as TTransport
 
 g_session_verify_callback  = None
@@ -46,6 +47,8 @@ def protobuf_to_value(msg_type_, val_):
     dest.ParseFromString(val_)
     return dest
 
+g_protocol = 1 #1 json
+
 g_ReadTMemoryBuffer   = TTransport.TMemoryBuffer()
 g_ReadTBinaryProtocol = TBinaryProtocol.TBinaryProtocol(g_ReadTMemoryBuffer)
 
@@ -55,7 +58,13 @@ def decode_buff(dest, val_):
     g_ReadTMemoryBuffer.cstringio_buf.seek(0)
     g_ReadTMemoryBuffer.cstringio_buf.write(val_)
     g_ReadTMemoryBuffer.cstringio_buf.seek(0)
-    dest.read(g_ReadTBinaryProtocol)
+    if g_protocol == 1:
+        proto = TJSONProtocol.TJSONProtocol(g_ReadTMemoryBuffer)
+        proto.readMessageBegin();
+        dest.read(proto)
+        proto.readMessageEnd();
+    else:
+        dest.read(g_ReadTBinaryProtocol)
     return dest
 
 def ignore_id(id_):
@@ -143,7 +152,13 @@ def to_str(msg):
         global g_WriteTMemoryBuffer, g_WriteTBinaryProtocol
         g_WriteTMemoryBuffer.cstringio_buf.truncate()
         g_WriteTMemoryBuffer.cstringio_buf.seek(0)
-        msg.write(g_WriteTBinaryProtocol)
+        if g_protocol == 1:
+            proto = TJSONProtocol.TJSONProtocol(g_WriteTMemoryBuffer)
+            proto.writeMessageBegin('ff', 0, 0);
+            msg.write(proto)
+            proto.writeMessageEnd();
+        else:
+            msg.write(g_WriteTBinaryProtocol)
         return g_WriteTMemoryBuffer.getvalue()
         #mb = TTransport.TMemoryBuffer()
         #bp = TBinaryProtocol.TBinaryProtocol(mb)

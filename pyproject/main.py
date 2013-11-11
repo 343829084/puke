@@ -13,6 +13,15 @@ def GetNowTime():
 print("loading.......")
 
 def init():
+    msg = msg_def.chat_req_t()
+    msg.content = 'OhNice'
+    s = ffext.to_str(msg)
+    print(s)
+    
+    dest = msg_def.chat_req_t()
+    ffext.decode_buff(dest, s)
+    print(dest.content)
+    
     return 0
     
 def cleanup():
