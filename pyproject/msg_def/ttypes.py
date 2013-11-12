@@ -45,6 +45,7 @@ class server_cmd_e:
   READY_RET = 3
   PASS_RET = 4
   QUIT_RET = 5
+  ROOM_RET = 6
 
   _VALUES_TO_NAMES = {
     1: "CHUPAI_RET",
@@ -52,6 +53,7 @@ class server_cmd_e:
     3: "READY_RET",
     4: "PASS_RET",
     5: "QUIT_RET",
+    6: "ROOM_RET",
   }
 
   _NAMES_TO_VALUES = {
@@ -60,6 +62,7 @@ class server_cmd_e:
     "READY_RET": 3,
     "PASS_RET": 4,
     "QUIT_RET": 5,
+    "ROOM_RET": 6,
   }
 
 
