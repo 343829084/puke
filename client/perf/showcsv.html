@@ -1,0 +1,635 @@
+<html>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<head>
+
+	<title>CSV/JSON Draw Tool</title>
+</head>
+<body>
+<div id="content">
+  <div id="indiv">
+	<h1>A simple CSV/JSON Draw Tool</h1>
+	<textarea id="incsv"  rows="10" cols="100">time,mod,max_cost[us],min_cost[us],per_cost[us],request_per_second,exe_times
+20120606-17:01:41,dumy,515,174,254,3937,390
+20120606-17:01:41,foo,5924,4,506,1976,1030
+20120606-17:01:41,test,304,8,243,4115,185
+20120606-17:11:41,dumy,1086,222,280,5571,312
+20120606-17:11:41,foo,5707,194,503,1988,770
+20120606-17:11:41,test,807,8,265,3773,142
+20120606-17:21:41,dumy,1086,222,680,2571,512
+20120606-17:21:41,foo,5707,194,403,1388,470
+20120606-17:21:41,test,807,8,265,4773,442</textarea><button type="button" id="ShowDefaultSjon">显示示例JSON</button>
+	</br><button type="button" id="butt">转换CSV</button>
+	<button type="button" id="ButtJson">转换JSON</button>
+
+  </div>
+<DIV id="outdiv" align=left 
+style=' 
+color: #336699; 
+background-color:#dcdcdc; 
+border: solid 1px blue; 
+scrollbar-face-color: #ffd700;
+scrollbar-shadow-color: #e0ffff;
+scrollbar-highlight-color: #fa8072;
+scrollbar-3dlight-color: #ff0000;
+scrollbar-darkshadow-color: #afeeee;
+scrollbar-track-color: #ffb6c1;
+scrollbar-arrow-color: #e6e6fa;
+'></DIV>
+  <div id="graph"></div>
+
+</div>
+
+<textarea id="DefaultJson" style="width:200;height:200;visibility:hidden">[["time","mod","max_cost[us]","min_cost[us]","per_cost[us]","request_per_second","exe_times"],["20120606-17:01:41","dumy",515,174,254,3937,390],["20120606-17:01:41","foo",5924,4,506,1976,1030],["20120606-17:01:41","test",304,8,243,4115,185],["20120606-17:11:41","dumy",1086,222,280,5571,312],["20120606-17:11:41","foo",5707,194,503,1988,770],["20120606-17:11:41","test",807,8,265,3773,142],["20120606-17:21:41","dumy",1086,222,680,2571,512],["20120606-17:21:41","foo",5707,194,403,1388,470],["20120606-17:21:41","test",807,8,265,4773,442]]</textarea>
+
+
+<script type="text/javascript" src="./js/jquery.js"></script>
+<script src="./js/ucsv-1.1.0.js"></script>
+<script src="./js/Highcharts-2.3.2/js/highcharts.js" type="text/javascript"></script>
+<script src="./js/Highcharts-2.3.2/js/modules/exporting.js"></script>
+<script src="./js/json2.js"></script>
+<script>
+
+function apple_theme()
+{
+/**
+* Gray theme for Highcharts JS
+* @author Torstein Hønsi
+*/
+
+Highcharts.theme = {
+   colors: ["#DDDF0D", "#7798BF", "#55BF3B", "#DF5353", "#aaeeee", "#ff0066", "#eeaaee",
+      "#55BF3B", "#DF5353", "#7798BF", "#aaeeee"],
+   chart: {
+      backgroundColor: {
+         linearGradient: [0, 0, 0, 400],
+         stops: [
+            [0, 'rgb(96, 96, 96)'],
+            [1, 'rgb(16, 16, 16)']
+         ]
+      },
+      borderWidth: 0,
+      borderRadius: 15,
+      plotBackgroundColor: null,
+      plotShadow: false,
+      plotBorderWidth: 0
+   },
+   title: {
+      style: {
+         color: '#FFF',
+         font: '16px Lucida Grande, Lucida Sans Unicode, Verdana, Arial, Helvetica, sans-serif'
+      }
+   },
+   subtitle: {
+      style: {
+         color: '#DDD',
+         font: '12px Lucida Grande, Lucida Sans Unicode, Verdana, Arial, Helvetica, sans-serif'
+      }
+   },
+   xAxis: {
+      gridLineWidth: 0,
+      lineColor: '#999',
+      tickColor: '#999',
+      labels: {
+         style: {
+            color: '#999',
+            fontWeight: 'bold'
+         }
+      },
+      title: {
+         style: {
+            color: '#AAA',
+            font: 'bold 12px Lucida Grande, Lucida Sans Unicode, Verdana, Arial, Helvetica, sans-serif'
+         }
+      }
+   },
+   yAxis: {
+      alternateGridColor: null,
+      minorTickInterval: null,
+      gridLineColor: 'rgba(255, 255, 255, .1)',
+      lineWidth: 0,
+      tickWidth: 0,
+      labels: {
+         style: {
+            color: '#999',
+            fontWeight: 'bold'
+         }
+      },
+      title: {
+         style: {
+            color: '#AAA',
+            font: 'bold 12px Lucida Grande, Lucida Sans Unicode, Verdana, Arial, Helvetica, sans-serif'
+         }
+      }
+   },
+   legend: {
+      itemStyle: {
+         color: '#CCC'
+      },
+      itemHoverStyle: {
+         color: '#FFF'
+      },
+      itemHiddenStyle: {
+         color: '#333'
+      }
+   },
+   labels: {
+      style: {
+         color: '#CCC'
+      }
+   },
+   tooltip: {
+      backgroundColor: {
+         linearGradient: [0, 0, 0, 50],
+         stops: [
+            [0, 'rgba(96, 96, 96, .8)'],
+            [1, 'rgba(16, 16, 16, .8)']
+         ]
+      },
+      borderWidth: 0,
+      style: {
+         color: '#FFF'
+      }
+   },
+
+
+   plotOptions: {
+      line: {
+         dataLabels: {
+            color: '#CCC'
+         },
+         marker: {
+            lineColor: '#333'
+         }
+      },
+      spline: {
+         marker: {
+            lineColor: '#333'
+         }
+      },
+      scatter: {
+         marker: {
+            lineColor: '#333'
+         }
+      },
+      candlestick: {
+         lineColor: 'white'
+      }
+   },
+
+   toolbar: {
+      itemStyle: {
+         color: '#CCC'
+      }
+   },
+
+   navigation: {
+      buttonOptions: {
+         backgroundColor: {
+            linearGradient: [0, 0, 0, 20],
+            stops: [
+               [0.4, '#606060'],
+               [0.6, '#333333']
+            ]
+         },
+         borderColor: '#000000',
+         symbolStroke: '#C0C0C0',
+         hoverSymbolStroke: '#FFFFFF'
+      }
+   },
+
+   exporting: {
+      buttons: {
+         exportButton: {
+            symbolFill: '#55BE3B'
+         },
+         printButton: {
+            symbolFill: '#7797BE'
+         }
+      }
+   },
+
+   // scroll charts
+   rangeSelector: {
+      buttonTheme: {
+         fill: {
+            linearGradient: [0, 0, 0, 20],
+            stops: [
+               [0.4, '#888'],
+               [0.6, '#555']
+            ]
+         },
+         stroke: '#000000',
+         style: {
+            color: '#CCC',
+            fontWeight: 'bold'
+         },
+         states: {
+            hover: {
+               fill: {
+                  linearGradient: [0, 0, 0, 20],
+                  stops: [
+                     [0.4, '#BBB'],
+                     [0.6, '#888']
+                  ]
+               },
+               stroke: '#000000',
+               style: {
+                  color: 'white'
+               }
+            },
+            select: {
+               fill: {
+                  linearGradient: [0, 0, 0, 20],
+                  stops: [
+                     [0.1, '#000'],
+                     [0.3, '#333']
+                  ]
+               },
+               stroke: '#000000',
+               style: {
+                  color: 'yellow'
+               }
+            }
+         }
+      },
+      inputStyle: {
+         backgroundColor: '#333',
+         color: 'silver'
+      },
+      labelStyle: {
+         color: 'silver'
+      }
+   },
+
+   navigator: {
+      handles: {
+         backgroundColor: '#666',
+         borderColor: '#AAA'
+      },
+      outlineColor: '#CCC',
+      maskFill: 'rgba(16, 16, 16, 0.5)',
+      series: {
+         color: '#7798BF',
+         lineColor: '#A6C7ED'
+      }
+   },
+
+   scrollbar: {
+      barBackgroundColor: {
+            linearGradient: [0, 0, 0, 20],
+            stops: [
+               [0.4, '#888'],
+               [0.6, '#555']
+            ]
+         },
+      barBorderColor: '#CCC',
+      buttonArrowColor: '#CCC',
+      buttonBackgroundColor: {
+            linearGradient: [0, 0, 0, 20],
+            stops: [
+               [0.4, '#888'],
+               [0.6, '#555']
+            ]
+         },
+      buttonBorderColor: '#CCC',
+      rifleColor: '#FFF',
+      trackBackgroundColor: {
+         linearGradient: [0, 0, 0, 10],
+         stops: [
+            [0, '#000'],
+            [1, '#333']
+         ]
+      },
+      trackBorderColor: '#666'
+   },
+
+   // special colors for some of the demo examples
+   legendBackgroundColor: 'rgba(48, 48, 48, 0.8)',
+   legendBackgroundColorSolid: 'rgb(70, 70, 70)',
+   dataLabelsColor: '#444',
+   textColor: '#E0E0E0',
+   maskColor: 'rgba(255,255,255,0.3)'
+};
+
+// Apply the theme
+var highchartsOptions = Highcharts.setOptions(Highcharts.theme);
+}
+
+function ShowLineGraph(titleName, yName, x_array, data_array)
+{
+	var chart;
+	chart = new Highcharts.Chart({
+		chart: {
+			renderTo: 'line_container',
+			type: 'spline',
+			marginRight: 130,
+			marginBottom: 50
+		},
+		title: {
+			text: titleName,
+			x: -20 //center
+		},
+		subtitle: {
+			text: '',
+			x: -20
+		},
+		xAxis: {
+			categories: x_array
+		},
+		yAxis: {
+			title: {
+				text: yName
+			},
+			plotLines: [{
+				value: 0,
+				width: 1,
+				color: '#808080'
+			}]
+		},
+		tooltip: {
+			formatter: function() {
+					return '<b>'+ this.series.name +'</b><br/>'+
+					this.x +': '+ this.y + yName;
+			}
+		},
+		legend: {
+			layout: 'vertical',
+			align: 'right',
+			verticalAlign: 'top',
+			x: -10,
+			y: 100,
+			borderWidth: 0
+		},
+		series: data_array
+	});
+}
+var GlobalType = 'CSV';
+function GetDataArray(csv)
+{
+	if (GlobalType == 'CSV') {
+		return CSV.csvToArray(csv, true); // Convert the csv into an array
+	}
+	return eval( '(' + csv + ')' );
+}
+function parseJson(){
+	GlobalType = 'JSON';
+	ShowOption();
+}
+function parseCSV() {
+	ShowOption();
+}
+
+function ShowOption() {
+	csv = $('#incsv').val(); // get the input from the textbox
+	arr = GetDataArray(csv);
+
+	SelectXOut = "<b>横坐标:</b><select size=\"1\" id=\"SelectXOut\" name=\"n_select_box\">";
+	SelectYOut = "<b>纵坐标:</b><select size=\"1\" id=\"SelectYOut\" name=\"n_select_box\">";
+	SelectClassOut = "<b>选择区分类别的字段[可选]:</b><select size=\"1\" id=\"SelectClassOut\" name=\"n_select_box\"><option>无</option>";
+	for (i = 0; i < arr[0].length; i += 1) {
+		field_name = arr[0][i];
+		SelectXOut += "<option>" + field_name + "</option>";
+		SelectYOut += "<option>" + field_name + "</option>";
+		SelectClassOut += "<option>" + field_name + "</option>";
+	}
+	SelectXOut += "</select> ";
+	SelectYOut += "</select></br>";
+	SelectClassOut += "</select></br>";
+	SelectMinOut = "<b>最小值:</b><INPUT id= \"SelectMinOut\"  style= \"WIDTH:40px;   HEIGHT: 21px\" type= \"input\" maxLength= \"10\" size= \"38\" name= \"SelectMinOut\" value=\"1\">";
+	SelectMaxOut = "<b>最大值:</b><INPUT id= \"SelectMaxOut\"  style= \"WIDTH:40px;   HEIGHT: 21px\" type= \"input\" maxLength= \"10\" size= \"38\" name= \"SelectMaxOut\" value=\"6000\">";	
+	SelectButtonOut = " <button type=\"button\" id=\"SelectButtonOut\">显示折线图</button>";
+	SelectBarButtonOut = " <button type=\"button\" id=\"SelectBarButtonOut\">显示饼图</button>";
+	OutPutForSelectClass = "<div id = \"OutPutForSelectClass\"></div>";
+	$('#outdiv').html(SelectXOut + SelectYOut + SelectClassOut + OutPutForSelectClass + SelectMinOut + SelectMaxOut + SelectButtonOut + SelectBarButtonOut);
+	$('#SelectButtonOut').click(ShowLineGraphOnClick);
+	$('#SelectBarButtonOut').click(ShowBarGraphOnClick);
+	$("#SelectClassOut").change(function(){
+	   SelectClassOutVal = $('#SelectClassOut').val();
+	   index = 0;
+	   all_option = {}
+	   for (i = 0; i < arr[0].length; i += 1) {
+			if (arr[0][i] == SelectClassOutVal){
+				index = i;
+				break;
+			}
+		}
+	   for (i = 1; i < arr.length; i += 1) {
+			ClassName = arr[i][index];
+			if (false == all_option.hasOwnProperty(ClassName))
+			{
+				all_option[ClassName] = ClassName;
+			}
+		}
+		output_str = " ";
+		for(var key in all_option) {
+			output_str += " <input type=\"checkbox\" name=\"checkbox\" value=\"" + key + "\">" + key;
+		}
+		$('#OutPutForSelectClass').html(output_str);
+	});
+	//$('#OutPutForSelectClass').html(JSON.stringify(arr));
+}
+function ShowLineGraphOnClick()
+{	
+	csv = $('#incsv').val(); // get the input from the textbox
+	arr = GetDataArray(csv);
+	TitleName = "线形图";
+	XName = $('#SelectXOut').val();
+	YName = $('#SelectYOut').val();
+	XArray = [];
+	DataArray = [];
+	XNameIndex = 0;
+	DataIndex = 0;
+	ClassName = $('#SelectClassOut').val();
+	ClassInex = 0;
+	MinVal = parseFloat($('#SelectMinOut').val());
+	MaxVal = parseFloat($('#SelectMaxOut').val());
+	for (i = 0; i < arr[0].length; i += 1) {
+		if (arr[0][i] == ClassName){
+			ClassInex = i;
+			break;
+		}
+	}
+	ClassDataIndex = [];
+	for (i = 0; i < arr[0].length; i += 1) {
+		$("input[name='checkbox']:checkbox:checked").each(function(){ 
+			var j = 0;
+			for (; j < ClassDataIndex.length; j += 1) {
+				if (ClassDataIndex[j].name == $(this).val())
+					break;
+			}
+			if (j == ClassDataIndex.length) {
+				ClassDataIndex.push({name: $(this).val(), index: ClassInex});
+			}
+		});
+		if (arr[0][i] == XName) {
+			XNameIndex = i;
+		}
+		if (arr[0][i] == YName) {
+			DataIndex = i;
+		}
+	}
+	var IsNoneClass = function() {
+		return ClassDataIndex.length == 0;
+	}
+	if (IsNoneClass()){//! 不区分类别
+		DataArray.push({name: YName, data: []});
+	}
+	else{
+		for (i = 0; i < ClassDataIndex.length; i += 1) {
+			DataArray.push({name: ClassDataIndex[i].name, data: []});
+		}
+	}
+	for (i = 1; i < arr.length; i += 1) {
+		row = arr[i];
+		if (XArray.length == 0){
+			XArray.push(row[XNameIndex]);
+		}
+		else if (IsNoneClass() && XArray[XArray.length-1] == row[XNameIndex]){//! 避免重复
+			continue;
+		}
+		else{
+			XArray.push(row[XNameIndex]);
+		}
+		Val = parseFloat(row[DataIndex]);
+		if (Val < MinVal) {
+			Val = MinVal;
+		}
+		else if (Val > MaxVal){
+			Val = MaxVal;
+		}
+		if (IsNoneClass()){
+			DataArray[0].data.push(Val);
+		}
+		else{
+			for (j = 0; j < ClassDataIndex.length; j += 1) {
+				if (ClassDataIndex[j].name == row[ClassDataIndex[j].index]) {
+					DataArray[j].data.push(Val);
+					break;
+				}
+			}
+		}
+	}
+	ShowLineGraph(TitleName, YName, XArray, DataArray);
+}
+function ShowBarGraphOnClick()
+{
+	csv = $('#incsv').val(); // get the input from the textbox
+	arr = GetDataArray(csv);
+	TitleName = "饼图";
+	XName = $('#SelectXOut').val();
+	YName = $('#SelectYOut').val();
+	XArray = [];
+	DataArray = [];
+	XNameIndex = 0;
+	DataIndex = 0;
+	ClassName = $('#SelectClassOut').val();
+	ClassInex = 0;
+	MinVal = parseFloat($('#SelectMinOut').val());
+	MaxVal = parseFloat($('#SelectMaxOut').val());
+	for (i = 0; i < arr[0].length; i += 1) {
+		if (arr[0][i] == ClassName){
+			ClassInex = i;
+			break;
+		}
+	}
+	ClassDataIndex = [];
+	for (i = 0; i < arr[0].length; i += 1) {
+		$("input[name='checkbox']:checkbox:checked").each(function(){ 
+			var j = 0;
+			for (; j < ClassDataIndex.length; j += 1) {
+				if (ClassDataIndex[j].name == $(this).val())
+					break;
+			}
+			if (j == ClassDataIndex.length) {
+				ClassDataIndex.push({name: $(this).val(), index: ClassInex});
+			}
+		});
+		if (arr[0][i] == XName) {
+			XNameIndex = i;
+		}
+		if (arr[0][i] == YName) {
+			DataIndex = i;
+		}
+	}
+	var IsNoneClass = function() {
+		return ClassDataIndex.length == 0;
+	}
+	if (IsNoneClass()){//! 不区分类别
+		alert("显示饼图必须选择类别");
+		return;
+	}
+	else{
+		for (i = 0; i < ClassDataIndex.length; i += 1) {
+			DataArray.push([ClassDataIndex[i].name, 0]);
+		}
+	}
+	for (i = 1; i < arr.length; i += 1) {
+		row = arr[i];
+		Val = parseFloat(row[DataIndex]);
+		for (j = 0; j < ClassDataIndex.length; j += 1) {
+			if (ClassDataIndex[j].name == row[ClassDataIndex[j].index]) {
+				DataArray[j][1] += Val;
+				break;
+			}
+		}
+	}
+	ShowbarGraph(TitleName, YName, DataArray);
+}
+function ShowbarGraph(TitleName, Name, DataArray) {
+    var chart;
+    $(document).ready(function() {
+        chart = new Highcharts.Chart({
+            chart: {
+                renderTo: 'line_container',
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false
+            },
+            title: {
+                text: TitleName//'Browser market shares at a specific website, 2010'
+            },
+            tooltip: {
+        	    pointFormat: '{series.name}: <b>{point.percentage}%</b>',
+            	percentageDecimals: 1
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        color: '#000000',
+                        connectorColor: '#000000',
+                        formatter: function() {
+                            return '<b>'+ this.point.name + ':' + this.y + ' ' + Name + '</b> [ '+ parseFloat(parseInt(this.percentage*100))/100 +' %]';
+                        }
+                    }
+                }
+            },
+            series: [{
+                type: 'pie',
+                name: Name,//'Browser share',
+                data: DataArray,
+            }]
+        });
+    });
+    
+}
+
+function ShowDefaultSjonOnClick(){
+	$('#incsv').html($('#DefaultJson').val());
+}
+$(document).ready( function() {
+    //$('#butt').click(showCSV);
+	apple_theme();
+	$('#butt').click(parseCSV);
+	$('#ButtJson').click(parseJson);
+	$('#ShowDefaultSjon').click(ShowDefaultSjonOnClick);
+});
+</script>
+
+<div id="line_container" style="min-width: 400px; height: 800px; margin: 10 auto"></div>
+<div id="bar_container" style="min-width: 400px; height: 600px; margin: 10 auto"></div>
+
+</body>
+</html>

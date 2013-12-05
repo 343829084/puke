@@ -1,0 +1,12 @@
+---
+name: ffown
+version: 1
+...
+name: APPNAME
+version: 1
+accesskey: abc
+
+handle:
+
+#自定义错误页面
+- errordoc: 600 600.html

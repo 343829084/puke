@@ -1,0 +1,160 @@
+// iocp.cpp : 定义控制台应用程序的入口点。
+//
+
+#include "stdafx.h"
+#include <windows.h>
+#include <winsock2.h>
+
+#include <assert.h>
+#include <iostream>
+using namespace std;
+
+#include <stdio.h>
+#include "winsock2.h"
+#include "mswsock.h"
+
+void main() {
+  //----------------------------------------
+  // Declare and initialize variables
+  WSADATA wsaData;
+  HANDLE hCompPort;
+  LPFN_ACCEPTEX lpfnAcceptEx = NULL;
+  GUID GuidAcceptEx = WSAID_ACCEPTEX;
+  WSAOVERLAPPED olOverlap;
+  
+  SOCKET ListenSocket, AcceptSocket;
+  sockaddr_in service;
+  char lpOutputBuf[1024];
+  int outBufLen = 1024;
+  DWORD dwBytes;
+
+  //----------------------------------------
+  // Initialize Winsock
+  int iResult = WSAStartup( MAKEWORD(2,2), &wsaData );
+  if( iResult != NO_ERROR )
+    printf("Error at WSAStartup\n");
+
+  //----------------------------------------
+  // Create a handle for the completion port
+  hCompPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, (u_long)0, 0 );
+
+  //----------------------------------------
+  // Create a listening socket
+  ListenSocket = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+  if (ListenSocket == INVALID_SOCKET) {
+    printf("Error at socket(): ListenSocket\n");
+    WSACleanup();
+    return;
+  }
+
+  //----------------------------------------
+  // Associate the listening socket with the completion port
+  long foo = 100;
+  CreateIoCompletionPort((HANDLE)ListenSocket, hCompPort, (u_long)&foo, 0);
+
+  //----------------------------------------
+  // Bind the listening socket to the local IP address
+  // and port 27015
+  hostent* thisHost;
+  char* ip;
+  u_short port;
+  port = 27015;
+  thisHost = gethostbyname("");
+  ip = inet_ntoa (*(struct in_addr *)*thisHost->h_addr_list);
+
+  service.sin_family = AF_INET;
+  service.sin_addr.s_addr = inet_addr(ip);  service.sin_port = htons(port);
+
+  if ( bind( ListenSocket,(SOCKADDR*) &service, sizeof(service) )  == SOCKET_ERROR ) {
+    printf("bind failed\n");
+    closesocket(ListenSocket);
+    return;
+  }
+
+  //----------------------------------------
+  // Start listening on the listening socket
+  if (listen( ListenSocket, 100 ) == SOCKET_ERROR) {
+    printf("error listening\n");
+  } 
+  printf("Listening on address: %s:%d\n", ip, port);
+
+  //----------------------------------------
+  // Load the AcceptEx function into memory using WSAIoctl.
+  // The WSAIoctl function is an extension of the ioctlsocket()
+  // function that can use overlapped I/O. The function's 3rd
+  // through 6th parameters are input and output buffers where
+  // we pass the pointer to our AcceptEx function. This is used
+  // so that we can call the AcceptEx function directly, rather
+  // than refer to the Mswsock.lib library.
+  WSAIoctl(ListenSocket, 
+    SIO_GET_EXTENSION_FUNCTION_POINTER, 
+    &GuidAcceptEx, 
+    sizeof(GuidAcceptEx),
+    &lpfnAcceptEx, 
+    sizeof(lpfnAcceptEx), 
+    &dwBytes, 
+    NULL, 
+    NULL);
+
+  //----------------------------------------
+  // Create an accepting socket
+  AcceptSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (AcceptSocket == INVALID_SOCKET) {
+    printf("Error creating accept socket.\n");
+    WSACleanup();
+    return;
+  }
+
+  //----------------------------------------
+  // Empty our overlapped structure and accept connections.
+  memset(&olOverlap, 0, sizeof(olOverlap));
+
+  if (false == lpfnAcceptEx(ListenSocket, 
+		AcceptSocket,
+		lpOutputBuf, 
+		outBufLen - ((sizeof(sockaddr_in) + 16) * 2),
+		sizeof(sockaddr_in) + 16, 
+		sizeof(sockaddr_in) + 16, 
+		&dwBytes, 
+		&olOverlap))
+  {
+	cout <<"XXXXXXXXXXXX:" << dwBytes << "\n";
+  }
+  //----------------------------------------
+  // Associate the accept socket with the completion port
+  CreateIoCompletionPort((HANDLE)AcceptSocket, hCompPort, (u_long)&foo, 0);
+
+	DWORD           dwBytesXfered;
+	ULONG_PTR       *PerHandleKey;
+	OVERLAPPED      *Overlap;
+
+	for (int i = 0; i < 5; ++i)
+	{
+		::GetQueuedCompletionStatus(
+									hCompPort,
+									&dwBytesXfered,
+									(PULONG_PTR)&PerHandleKey,
+									&Overlap,
+									INFINITE);
+
+		//cout <<"ptr:" << PerHandleKey <<"\n";
+		const char* b = "hello world";
+		cout << (*(long*)(PerHandleKey)) <<"\n";
+
+		cout <<"******XXXXXXXXXXXX:" << dwBytes << "\n";
+		send(AcceptSocket, b, 11, 0);
+		closesocket(AcceptSocket);
+		AcceptSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+			lpfnAcceptEx(ListenSocket, 
+				AcceptSocket,
+				lpOutputBuf, 
+				outBufLen - ((sizeof(sockaddr_in) + 16) * 2),
+				sizeof(sockaddr_in) + 16, 
+				sizeof(sockaddr_in) + 16, 
+				&dwBytes, 
+				&olOverlap);
+	}
+  //----------------------------------------
+  // Continue on to use send, recv, TransmitFile(), etc.,.
+	system("PAUSE");
+}
